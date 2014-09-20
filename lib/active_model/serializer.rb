@@ -75,13 +75,17 @@ end
         name.demodulize.underscore.sub(/_serializer$/, '') if name
       end
 
+      def registry_name(attr)
+        "_accessor_for_#{attr}"
+      end
+
       def attributes(*attrs)
         @_attributes.concat attrs
 
         attrs.each do |attr|
-          define_method attr do
+          define_method registry_name(attr) do
             object.read_attribute_for_serialization attr
-          end unless method_defined?(attr)
+          end unless method_defined? registry_name(attr)
         end
       end
 
@@ -107,9 +111,9 @@ end
         options = attrs.extract_options!
 
         attrs.each do |attr|
-          define_method attr do
+          define_method registry_name(attr) do
             object.send attr
-          end unless method_defined?(attr)
+          end unless method_defined? registry_name(attr)
 
           @_associations[attr] = klass.new(attr, options)
         end
@@ -141,9 +145,27 @@ end
       key_format == :lower_camel && key.present? ? key.camelize(:lower) : key
     end
 
+    def from_registry_with_fall_through(name)
+      reg_name = self.class.registry_name(name)
+      # If the method belongs to ActiveModel::Serializer, we defer to the registry
+      if respond_to? reg_name
+        if respond_to? name
+          if method(name).owner == ActiveModel::Serializer
+            send reg_name
+          else
+            send name
+          end
+        else
+          send reg_name
+        end
+      else
+        send name
+      end
+    end
+
     def attributes
       filter(self.class._attributes.dup).each_with_object({}) do |name, hash|
-        hash[name] = send(name)
+        hash[name] = from_registry_with_fall_through name
       end
     end
 
@@ -208,7 +230,7 @@ end
     end
 
     def build_serializer(association)
-      object = send(association.name)
+      object = from_registry_with_fall_through(association.name)
       association.build_serializer(object, association_options_for_serializer(association))
     end
 
@@ -226,7 +248,7 @@ end
     end
 
     def serialize_ids(association)
-      associated_data = send(association.name)
+      associated_data = from_registry_with_fall_through(association.name)
       if associated_data.respond_to?(:to_ary)
         associated_data.map { |elem| serialize_id(elem, association) }
       else
