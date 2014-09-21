@@ -4,7 +4,7 @@ module ActiveModel
       class HasMany < Association
         def initialize(name, *args)
           super
-          @root_key = @embedded_key
+          @root_key = @embedded_key.to_s
           @key ||= "#{name.to_s.singularize}_ids"
         end
 
