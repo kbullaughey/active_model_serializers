@@ -45,6 +45,12 @@ class Post < Model
   end
 end
 
+class SpecialPost < Post
+  def special_comment
+    @speical_comment ||= Comment.new(content: 'special')
+  end
+end
+
 class Comment < Model
 end
 
@@ -102,6 +108,12 @@ class PostSerializer < ActiveModel::Serializer
   attributes :title, :body
 
   has_many :comments
+end
+
+class SpecialPostSerializer < ActiveModel::Serializer
+  attributes :title, :body
+  has_many :comments, root: :comments, embed_in_root: true, embed: :ids
+  has_one :special_comment, root: :comments, embed_in_root: true, embed: :ids
 end
 
 class CommentSerializer < ActiveModel::Serializer
