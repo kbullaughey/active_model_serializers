@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'pry'
 
 module ActiveModel
   class Serializer
@@ -17,7 +18,7 @@ module ActiveModel
             title: 'T1',
             body: 'B1',
             'comment_ids' => @post.comments.map { |c| c.object_id },
-            'special_comment_id' => @post_serializer.special_comment.object_id,
+            'special_comment_id' => @post.special_comment.object_id,
           },
           "comments" => [{ content: 'C1' }, { content: 'C2' }, { content: 'special' }]
         }, @post_serializer.as_json(root: 'post'))

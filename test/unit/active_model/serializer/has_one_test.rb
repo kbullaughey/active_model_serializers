@@ -216,6 +216,21 @@ module ActiveModel
           }
         }, @user_serializer.as_json)
       end
+
+      def test_null_associations_embedding_ids_and_embed_in_root_key
+        @association.embed_in_root = true
+        @association.embed = :ids
+        def @user.profile
+          nil
+        end
+        assert_equal({
+          'user' => {
+            name: 'Name 1', email: 'mail@server.com',
+            'profile_id' => nil
+          },
+          'profiles' => []
+        }, @user_serializer.as_json)
+      end
     end
   end
 end
